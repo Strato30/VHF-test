@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VHF 無線電話模擬考試</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    background: linear-gradient(145deg, #001a33 0%, #003366 40%, #006699 100%);
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.container {
+    max-width: 860px;
+    width: 100%;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+}
+header {
+    background: #003366;
+    color: white;
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+header h1 { font-size: 22px; font-weight: 700; }
+header small { font-size: 12px; opacity: 0.8; display: block; margin-top: 2px; }
+.timer {
+    background: #f0c040;
+    color: #003366;
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+}
+.nav-tabs {
+    display: flex;
+    background: #eef3f7;
+    padding: 4px;
+    gap: 6px;
+}
+.nav-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 30px;
+    transition: 0.2s;
+    border: none;
+    background: transparent;
+    color: #004080;
+    font-size: 14px;
+}
+.nav-tab.active { background: #003366; color: white; }
+.nav-tab .count {
+    background: rgba(255,255,255,0.25);
+    padding: 0 10px;
+    border-radius: 20px;
+    margin-left: 5px;
+    font-size: 12px;
+}
+.nav-tab.active .count { background: #f0c040; color: #003366; }
+.panel { display: none; padding: 20px 22px; }
+.panel.active { display: block; }
+
+/* A部 */
+.q-card {
+    background: #f7faff;
+    border: 1px solid #dce6f0;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+}
+.q-card .q-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #003366;
+    margin-bottom: 10px;
+}
+.q-card .q-body {
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+}
+.q-card textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 1.5px solid #ced4da;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+}
+.q-card textarea:focus { outline: none; border-color: #003366; box-shadow: 0 0 0 3px rgba(0,51,102,0.15); }
+.btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.btn {
+    padding: 9px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: 0.15s;
+}
+.btn-primary { background: #003366; color: white; }
+.btn-primary:hover { background: #002244; }
+.btn-success { background: #28a745; color: white; }
+.btn-success:hover { background: #218838; }
+.btn-warning { background: #f0c040; color: #212529; }
+.btn-warning:hover { background: #d4a017; }
+.btn-outline { background: white; color: #003366; border: 1.5px solid #003366; }
+.btn-outline:hover { background: #eef3f7; }
+.ref-answer {
+    display: none;
+    margin-top: 12px;
+    padding: 14px;
+    background: #eef7ee;
+    border-left: 5px solid #28a745;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+.ref-answer.show { display: block; }
+.ref-answer h4 { color: #155724; margin-bottom: 6px; }
+.ref-answer ul { padding-left: 18px; margin-top: 6px; }
+
+/* B部 */
+.b-list { max-height: 500px; overflow-y: auto; }
+.b-item {
+    padding: 12px 14px;
+    margin: 5px 0;
+    border-radius: 12px;
+    cursor: pointer;
+    background: #f8f9fa;
+    transition: 0.15s;
+    border: 1px solid #e2e8f0;
+}
+.b-item:hover { background: #e2e8f0; }
+.b-item.active { background: #003366; color: white; }
+.b-item.answered { background: #d4edda; border-color: #28a745; }
+.b-item .num { font-weight: 700; margin-right: 8px; }
+.b-item .status { float: right; font-size: 16px; }
+
+.b-detail .q-text { font-size: 15px; font-weight: 500; margin-bottom: 12px; line-height: 1.6; }
+.b-detail .opt-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: white;
+    border: 1.5px solid #ddd;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 5px 0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.15s;
+}
+.b-detail .opt-btn:hover:not(:disabled) { border-color: #003366; background: #eef3f7; }
+.b-detail .opt-btn.correct { background: #d4edda; border-color: #28a745; }
+.b-detail .opt-btn.wrong { background: #f8d7da; border-color: #dc3545; }
+.b-detail .opt-btn:disabled { cursor: not-allowed; opacity: 0.85; }
+.b-detail .exp-box {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+.b-detail .exp-box.show { display: block; }
+.b-detail .exp-box.correct { background: #d4edda; border-left: 4px solid #28a745; }
+.b-detail .exp-box.wrong { background: #f8d7da; border-left: 4px solid #dc3545; }
+
+/* 結果總表 */
+.result-wrap { margin-top: 20px; }
+.result-summary {
+    text-align: center;
+    padding: 24px;
+    background: linear-gradient(135deg, #f0f8ff, #eef3f7);
+    border-radius: 18px;
+    margin-bottom: 16px;
+}
+.result-summary .big-score { font-size: 56px; font-weight: 700; color: #003366; }
+.result-summary .verdict { font-size: 20px; font-weight: 600; margin-top: 4px; }
+.result-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.result-table th { background: #003366; color: white; padding: 8px 6px; text-align: left; }
+.result-table td { padding: 6px; border-bottom: 1px solid #eee; }
+.result-table tr.ok { background: #d4edda; }
+.result-table tr.no { background: #f8d7da; }
+
+.footer { text-align: center; padding: 14px; font-size: 11px; color: #999; border-top: 1px solid #eee; }
+
+@media (max-width: 600px) {
+    header h1 { font-size: 18px; }
+    .nav-tab { font-size: 12px; padding: 8px 0; }
+    .timer { font-size: 14px; padding: 4px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <h1>📡 VHF 無線電話模擬考試</h1>
+            <small>限用香港水域 · 符合海事處官方格式</small>
+        </div>
+        <div class="timer" id="timerDisplay">⏱ 90:00</div>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="nav-tab active" id="tabA">✍️ A部 — 撰寫題 <span class="count" id="aCount">0/2</span></button>
+        <button class="nav-tab" id="tabB">📋 B部 — 選擇題 <span class="count" id="bCount">0/40</span></button>
+    </div>
+
+    <div class="panel active" id="panelA">
+        <div id="aContent">
+            <p style="text-align:center;color:#888;margin:40px 0;">🚀 請點擊下方「開始考試」按鈕載入題目</p>
+        </div>
+        <div style="text-align:center;margin-top:10px;">
+            <button class="btn btn-success" id="startBtn" style="font-size:16px;padding:12px 36px;">🚀 開始考試</button>
+        </div>
+    </div>
+
+    <div class="panel" id="panelB">
+        <div id="bContent">
+            <p style="text-align:center;color:#888;margin:40px 0;">📝 請先完成 A 部或點擊「開始考試」</p>
+        </div>
+        <div style="text-align:center;margin-top:10px;display:none;" id="bBottomBtns">
+            <button class="btn btn-primary" id="submitBtn">🏁 提交考試</button>
+            <button class="btn btn-outline" id="resetBtn">🔄 重新開始</button>
+        </div>
+        <div id="scoreArea"></div>
+    </div>
+
+    <div class="footer">香港海事處 VHF 合格證書模擬練習</div>
+</div>
+
+<script>
+"use strict";
+
+// ===================== 題庫 =====================
+var partAPool = [
+    {
+        scenario: "🚨 你的船隻「海燕」（SEA SWALLOW）在香港維多利亞港東部（北緯22°16′，東經114°10′）與一艘不明船隻碰撞，船身入水，情況危急，船上共有4人，需要立即救援。請撰寫完整的 MAYDAY 遇險呼叫及遇險電文。",
+        ref: "MAYDAY MAYDAY MAYDAY\n這裡是 海燕 海燕 海燕\nMAYDAY 海燕\n位置：北緯22度16分，東經114度10分（維多利亞港東部）\n遇險性質：碰撞，進水，下沉\n所需援助：立即救援\n船上人數：4人\n完畢",
+        points: ["必須重複三次 MAYDAY", "必須重複三次船名", "位置須準確（度/分）", "清楚說明遇險性質", "說明所需援助", "說明船上人數", "結尾用「完畢」"]
+    },
+    {
+        scenario: "⚠️ 你的船隻「東方之珠」（ORIENTAL PEARL）在南丫島以西（北緯22°12′，東經114°06′）發現一名船員墮海，你已放下救生艇進行搜救，但需要附近船隻協助瞭望。請撰寫完整的 PAN-PAN 緊急電文。",
+        ref: "PAN-PAN PAN-PAN PAN-PAN\n所有電台 所有電台 所有電台\n這裡是 東方之珠 東方之珠 東方之珠\n位置：北緯22度12分，東經114度06分（南丫島以西）\n狀況：有人墮海\n所需援助：請保持瞭望並協助搜索\n完畢",
+        points: ["必須重複三次 PAN-PAN", "呼叫對象為「所有電台」", "必須重複三次船名", "位置須準確", "清楚說明緊急狀況", "說明所需協助", "結尾用「完畢」"]
+    },
+    {
+        scenario: "🔥 你的船隻「銀河」（GALAXY）在赤鱲角機場對開海域（北緯22°18′，東經113°56′）機房起火，火勢迅速蔓延，船上5人需要立即撤離。請撰寫完整的 MAYDAY 遇險電文。",
+        ref: "MAYDAY MAYDAY MAYDAY\n這裡是 銀河 銀河 銀河\nMAYDAY 銀河\n位置：北緯22度18分，東經113度56分（赤鱲角機場對開）\n遇險性質：機房起火\n所需援助：立即撤離及滅火\n船上人數：5人\n完畢",
+        points: ["重複三次 MAYDAY", "重複三次船名", "位置精確", "清楚說明火災", "說明需要撤離", "說明人數", "結尾用「完畢」"]
+    },
+    {
+        scenario: "🌊 你的船隻「金星」（VENUS）在鯉魚門附近（北緯22°17′，東經114°14′）因機械故障失去動力，漂流至繁忙航道，船上3人，需要拖船協助。請撰寫適當的緊急電文。",
+        ref: "PAN-PAN PAN-PAN PAN-PAN\n所有電台 所有電台 所有電台\n這裡是 金星 金星 金星\n位置：北緯22度17分，東經114度14分（鯉魚門附近）\n狀況：機械故障，失去動力，漂流中\n所需援助：需要拖船\n完畢",
+        points: ["使用 PAN-PAN（非遇險但緊急）", "重複三次 PAN-PAN", "呼叫所有電台", "位置準確", "說明故障與漂流", "說明所需援助", "結尾用「完畢」"]
+    },
+    {
+        scenario: "🆘 你的船隻「木星」（JUPITER）在蒲台島以南（北緯22°10′，東經114°15′）發現一艘小型快艇翻沉，有兩人正在水中揮手求救。請撰寫 MAYDAY RELAY 電文轉發遇險呼叫。",
+        ref: "MAYDAY RELAY MAYDAY RELAY MAYDAY RELAY\n所有電台 所有電台 所有電台\n這裡是 木星 木星 木星\n位置：北緯22度10分，東經114度15分（蒲台島以南）\n遇險性質：小型快艇翻沉，兩人水中\n所需援助：立即救援\n完畢",
+        points: ["使用 MAYDAY RELAY（轉發）", "重複三次 MAYDAY RELAY", "呼叫所有電台", "位置準確", "說明翻沉及人數", "結尾用「完畢」"]
+    },
+    {
+        scenario: "⚓ 你的船隻「土星」（SATURN）在屯門避風塘入口（北緯22°22′，東經113°58′）擱淺，船身傾側，船上2人，無即時危險但需要協助脫困。請撰寫 PAN-PAN 電文。",
+        ref: "PAN-PAN PAN-PAN PAN-PAN\n所有電台 所有電台 所有電台\n這裡是 土星 土星 土星\n位置：北緯22度22分，東經113度58分（屯門避風塘入口）\n狀況：擱淺，船身傾側\n所需援助：需要拖船協助脫困\n完畢",
+        points: ["使用 PAN-PAN", "重複三次 PAN-PAN", "呼叫所有電台", "位置準確", "說明擱淺狀況", "說明所需援助", "結尾用「完畢」"]
+    },
+    {
+        scenario: "🏥 你的船隻「冥王星」（PLUTO）在香港仔避風塘（北緯22°14′，東經114°09′）發現一名乘客心臟病發，急需醫療援助。請撰寫 PAN-PAN MEDICAL 電文。",
+        ref: "PAN-PAN MEDICAL PAN-PAN MEDICAL PAN-PAN MEDICAL\n所有電台 所有電台 所有電台\n這裡是 冥王星 冥王星 冥王星\n位置：北緯22度14分，東經114度09分（香港仔避風塘）\n狀況：乘客心臟病發，急需醫療援助\n所需援助：請安排救護車在碼頭等候\n完畢",
+        points: ["使用 PAN-PAN MEDICAL", "重複三次", "呼叫所有電台", "位置準確", "說明醫療狀況", "說明所需醫療援助", "結尾用「完畢」"]
+    },
+    {
+        scenario: "💨 你的船隻「地球」（EARTH）在東平洲附近（北緯22°16′，東經114°23′）遭遇惡劣天氣，浪高5米，船身劇烈搖晃，船上6人，情況危險，需要立即救援。請撰寫 MAYDAY 電文。",
+        ref: "MAYDAY MAYDAY MAYDAY\n這裡是 地球 地球 地球\nMAYDAY 地球\n位置：北緯22度16分，東經114度23分（東平洲附近）\n遇險性質：惡劣天氣，浪高5米，船身危險\n所需援助：立即救援\n船上人數：6人\n完畢",
+        points: ["使用 MAYDAY", "重複三次", "重複三次船名", "位置準確", "說明惡劣天氣危險", "說明需要救援", "說明人數", "結尾用「完畢」"]
+    }
+];
+
+// B部題庫（每題 ans 是原始正確答案索引 0-3）
+var bPoolRaw = [
+    { q:"VHF 海上頻段的工作頻率範圍？", o:["156-174 MHz","88-108 MHz","27-50 MHz","400-470 MHz"], a:0, e:"VHF 海上頻段為 156-174 MHz。" },
+    { q:"VHF 第16頻道的用途？", o:["國際遇險、安全和呼叫頻道","船與岸之間通話","港口操作","氣象廣播"], a:0, e:"頻道 16 是國際遇險、安全和呼叫頻道。" },
+    { q:"哪個頻道專用於航行安全通訊？", o:["頻道 13","頻道 16","頻道 6","頻道 26"], a:0, e:"頻道 13 專用於航行安全通訊。" },
+    { q:"DSC 遇險呼叫在哪個頻道？", o:["頻道 70","頻道 16","頻道 13","頻道 6"], a:0, e:"DSC 使用頻道 70（156.525 MHz）。" },
+    { q:"「單工」通訊的意思是？", o:["雙方不能同時說話","雙方可以同時說話","需要使用衛星","只能接收不能發射"], a:0, e:"單工通訊同一時間只有一方能發射。" },
+    { q:"VHF 最大輸出功率通常為？", o:["25W","5W","10W","50W"], a:0, e:"最大輸出功率為 25 瓦。" },
+    { q:"「雙工」通訊的例子？", o:["船對岸電話","船對船對話","使用頻道16呼叫","以上皆是"], a:0, e:"船對岸電話使用雙工通訊。" },
+    { q:"「靜噪音」控制的作用？", o:["過濾背景噪音","調節音量","切換頻道","增加發射功率"], a:0, e:"靜噪音用於過濾背景噪音。" },
+    { q:"MAYDAY RELAY 表示？", o:["轉發遇險呼叫","某船遇險","測試信號","結束通話"], a:0, e:"MAYDAY RELAY 表示轉發遇險呼叫。" },
+    { q:"遇險通訊控制權屬於？", o:["海岸電台","遇險船隻","任何回應船隻","海事處"], a:0, e:"控制權屬於海岸電台或救援協調中心。" },
+    { q:"SÉCURITÉ 的優先級？", o:["第三優先級","最高","第二","最低"], a:0, e:"SÉCURITÉ 為第三優先級。" },
+    { q:"香港港口操作頻道？", o:["頻道 12","頻道 14","頻道 26","頻道 11"], a:0, e:"港口操作頻道為頻道 12。" },
+    { q:"船對岸通話前應先？", o:["監聽工作頻道","直接發射","調高音量","按下PTT"], a:0, e:"應先監聽將要使用的工作頻道。" },
+    { q:"OVER 的意思？", o:["通話完畢等待回覆","通話完畢不再回覆","請求重複","確認收到"], a:0, e:"OVER 表示通話完畢等待回覆。" },
+    { q:"OUT 的意思？", o:["通話完畢不再回覆","等待回覆","請說","結束整個通話"], a:0, e:"OUT 表示通話完畢不再回覆。" },
+    { q:"非遇險不得使用哪個頻道？", o:["頻道 16","頻道 13","頻道 6","頻道 26"], a:0, e:"頻道 16 嚴禁非遇險使用。" },
+    { q:"VHF 天線極化方式？", o:["垂直極化","水平極化","圓極化","斜極化"], a:0, e:"海上 VHF 天線採用垂直極化。" },
+    { q:"香港 VHF 證書有效期？", o:["5年","1年","3年","永久有效"], a:0, e:"有效期為 5 年。" },
+    { q:"限用香港水域可在哪裡操作？", o:["香港水域","全球任何水域","中國沿海","公海"], a:0, e:"僅限香港水域。" },
+    { q:"哪種情況應使用 PAN-PAN？", o:["人員落海但情況穩定","船隻沉沒","火災無法控制","收到炸彈威脅"], a:0, e:"PAN-PAN 用於非遇險但緊急的情況。" },
+    { q:"遇險通訊結束由誰宣布？", o:["救援協調中心","遇險船隻","最近海岸電台","任何參與救援船隻"], a:0, e:"由救援協調中心宣布。" },
+    { q:"頻道 6 主要用於？", o:["航空器協調","船對岸","港口操作","氣象警告"], a:0, e:"頻道 6 用於船舶與航空器協調。" },
+    { q:"香港船-岸公共通信頻道？", o:["頻道 26","頻道 12","頻道 14","頻道 73"], a:0, e:"頻道 26 是船-岸公共通信頻道。" },
+    { q:"呼叫前應先做什麼？", o:["監聽頻道是否空閒","直接發射","調高音量","按PTT不放"], a:0, e:"必須先監聽頻道是否空閒。" },
+    { q:"船舶電台執照由哪個機構簽發？", o:["通訊事務管理局","海事處","警務處","運輸署"], a:0, e:"由通訊事務管理局（OFCA）簽發。" },
+    { q:"數字 0 應讀作？", o:["zero","oh","nada","zéro"], a:0, e:"數字 0 讀作 zero。" },
+    { q:"聽到 MAYDAY 應如何？", o:["保持靜默除非能提供協助","立即回覆","轉發至其他船隻","記錄時間便算"], a:0, e:"應保持靜默，除非能提供協助。" },
+    { q:"頻道 9 常用於？", o:["遊艇和小型船隻通訊","商業船隻間通訊","港口管制","氣象報告"], a:0, e:"頻道 9 常用於遊艇和小型船隻通訊。" },
+    { q:"天線越長通常代表？", o:["增益越高","增益越低","頻寬越窄","阻抗越大"], a:0, e:"較長的天線增益較高。" },
+    { q:"正確的通話程序？", o:["先報對方名稱再報自己","先報自己再報對方","直接說內容","不用報名稱"], a:0, e:"標準程序是先報對方名稱再報自己名稱。" },
+    { q:"DSC 遇險按鈕需按下至少？", o:["5秒","1秒","3秒","10秒"], a:0, e:"需持續按下至少 5 秒。" },
+    { q:"頻道 11 的主要用途？", o:["船舶交通服務 VTS","天氣預報","娛樂通訊","漁業通訊"], a:0, e:"頻道 11 用於 VTS。" },
+    { q:"按下 PTT 後應等待多久？", o:["約1秒","立即說話","約3秒","不需要等待"], a:0, e:"應等待約 1 秒。" },
+    { q:"香港氣象廣播頻道？", o:["頻道 73","頻道 68","頻道 26","頻道 16"], a:0, e:"頻道 73 常用於氣象廣播。" },
+    { q:"MAYDAY 的正確讀法？", o:["梅戴","梅迪","梅德","媽爹"], a:0, e:"讀作「梅戴」。" },
+    { q:"字母 Z 的標準讀法？", o:["Zulu","Zebra","Zed","Zeta"], a:0, e:"Z 讀作 Zulu。" },
+    { q:"A部每題滿分多少？", o:["100分","50分","75分","150分"], a:0, e:"每題滿分 100 分。" },
+    { q:"哪項不屬於遇險電文必要內容？", o:["船長姓名","船名","位置","遇險性質"], a:0, e:"不需要船長姓名。" },
+    { q:"請求重複應使用？", o:["SAY AGAIN","REPEAT","OVER","COPY"], a:0, e:"使用 SAY AGAIN。" },
+    { q:"頻道 14 的主要用途？", o:["港口操作","海事處廣播","遊艇會通訊","渡輪通訊"], a:0, e:"頻道 14 用於港口操作。" },
+    { q:"低功率檔通常為多少瓦？", o:["1W","0.5W","5W","10W"], a:0, e:"低功率檔為 1 瓦。" },
+    { q:"數字 9 的標準讀法？", o:["Niner","Nine","Nein","No"], a:0, e:"數字 9 讀作 Niner。" },
+    { q:"電台日誌應保存至少？", o:["1年","6個月","2年","5年"], a:0, e:"應保存至少 1 年。" },
+    { q:"字母 W 的標準讀法？", o:["Whiskey","William","Wendy","Water"], a:0, e:"W 讀作 Whiskey。" },
+    { q:"船-船一般通訊頻道？", o:["頻道 72","頻道 6","頻道 8","頻道 16"], a:0, e:"頻道 72 常用於船-船一般通訊。" },
+    { q:"遇險電文位置單位？", o:["度分","度分秒","十進制度","經緯度坐標"], a:0, e:"位置應以度分表達。" },
+    { q:"MAYDAY 信號優先級？", o:["最高","中等","最低","與PAN-PAN相同"], a:0, e:"MAYDAY 是最高優先級。" },
+    { q:"字母 M 的標準讀法？", o:["Mike","Mary","Mother","Moon"], a:0, e:"M 讀作 Mike。" },
+    { q:"及格分數是多少？", o:["75%","50%","60%","80%"], a:0, e:"及格分數為 75%。" },
+    { q:"VTS 頻道是？", o:["頻道 11","頻道 12","頻道 13","頻道 14"], a:0, e:"VTS 使用頻道 11。" },
+    { q:"字母 S 的標準讀法？", o:["Sierra","Sugar","South","Sail"], a:0, e:"S 讀作 Sierra。" },
+    { q:"聽到 PAN-PAN 應該？", o:["保持靜默並注意聽","立即回覆","轉發至所有電台","關閉電台"], a:0, e:"應保持靜默並注意聽。" },
+    { q:"港口操作頻道是？", o:["頻道 12","頻道 13","頻道 16","頻道 70"], a:0, e:"頻道 12 用於港口操作。" },
+    { q:"字母 T 的標準讀法？", o:["Tango","Tom","Tea","Target"], a:0, e:"T 讀作 Tango。" },
+    { q:"數字 5 的標準讀法？", o:["Five","Fife","Fiver","Phive"], a:0, e:"數字 5 讀作 Five。" },
+    { q:"B部每題多少分？", o:["2.5分","1分","3分","5分"], a:0, e:"B部每題 2.5 分。" },
+    { q:"香港公共通信頻道？", o:["頻道 26","頻道 27","頻道 28","頻道 29"], a:0, e:"頻道 26 是公共通信頻道。" },
+    { q:"字母 R 的標準讀法？", o:["Romeo","Roger","Radio","Red"], a:0, e:"R 讀作 Romeo。" },
+    { q:"OVER 應放在？", o:["結尾","開頭","中間","不需要"], a:0, e:"OVER 應放在結尾。" },
+    { q:"航空器協調頻道？", o:["頻道 6","頻道 13","頻道 16","頻道 70"], a:0, e:"頻道 6 用於航空器協調。" },
+    { q:"字母 N 的標準讀法？", o:["November","Nancy","Night","North"], a:0, e:"N 讀作 November。" },
+    { q:"VHF 證書由哪個機構發出？", o:["海事處","通訊事務管理局","運輸署","警務處"], a:0, e:"由海事處發出。" },
+    { q:"字母 P 的標準讀法？", o:["Papa","Peter","Paul","Park"], a:0, e:"P 讀作 Papa。" },
+    { q:"數字 4 的標準讀法？", o:["Four","Fower","For","Fore"], a:0, e:"數字 4 讀作 Four。" },
+    { q:"氣象警告頻道？", o:["頻道 73","頻道 74","頻道 75","頻道 76"], a:0, e:"頻道 73 用於氣象警告。" },
+    { q:"字母 O 的標準讀法？", o:["Oscar","Ocean","Orange","Open"], a:0, e:"O 讀作 Oscar。" },
+    { q:"船名應重複多少次？", o:["3次","1次","2次","4次"], a:0, e:"船名應重複三次。" },
+    { q:"遊艇通訊頻道？", o:["頻道 9","頻道 12","頻道 13","頻道 16"], a:0, e:"頻道 9 常用於遊艇通訊。" },
+    { q:"字母 L 的標準讀法？", o:["Lima","London","Love","Lake"], a:0, e:"L 讀作 Lima。" },
+    { q:"數字 8 的標準讀法？", o:["Eight","Ait","Octo","Acht"], a:0, e:"數字 8 讀作 Eight。" },
+    { q:"緊急頻道是？", o:["頻道 16","頻道 70","頻道 13","頻道 6"], a:0, e:"緊急頻道為頻道 16。" },
+    { q:"字母 K 的標準讀法？", o:["Kilo","King","Kitty","Key"], a:0, e:"K 讀作 Kilo。" },
+    { q:"數字 7 的標準讀法？", o:["Seven","Sev-en","Set","Sept"], a:0, e:"數字 7 讀作 Seven。" },
+    { q:"漁業通訊頻道？", o:["頻道 8","頻道 9","頻道 10","頻道 11"], a:0, e:"頻道 8 常用於漁業通訊。" },
+    { q:"字母 J 的標準讀法？", o:["Juliett","John","Jack","Jane"], a:0, e:"J 讀作 Juliett。" },
+    { q:"數字 6 的標準讀法？", o:["Six","Siks","Sex","Sext"], a:0, e:"數字 6 讀作 Six。" },
+    { q:"渡輪通訊頻道？", o:["頻道 14","頻道 15","頻道 17","頻道 78"], a:0, e:"頻道 14 常用於渡輪通訊。" },
+    { q:"字母 U 的標準讀法？", o:["Uniform","United","Umbrella","Up"], a:0, e:"U 讀作 Uniform。" },
+    { q:"數字 2 的標準讀法？", o:["Two","Too","Tu","Deux"], a:0, e:"數字 2 讀作 Two。" },
+    { q:"娛樂船隻通訊頻道？", o:["頻道 9","頻道 10","頻道 71","頻道 79"], a:0, e:"頻道 9 常用於娛樂船隻。" },
+    { q:"字母 I 的標準讀法？", o:["India","Italia","Ice","Island"], a:0, e:"I 讀作 India。" },
+    { q:"數字 3 的標準讀法？", o:["Three","Tree","Thri","Tres"], a:0, e:"數字 3 讀作 Three（亦可讀作 Tree）。" },
+    { q:"船舶代理通訊頻道？", o:["頻道 18","頻道 19","頻道 20","頻道 21"], a:0, e:"頻道 18 常用於船舶代理。" },
+    { q:"字母 E 的標準讀法？", o:["Echo","Eee","Easy","Elephant"], a:0, e:"E 讀作 Echo。" },
+    { q:"數字 1 的標準讀法？", o:["One","Wun","Wan","All"], a:0, e:"數字 1 讀作 One（亦可讀作 Wun）。" },
+    { q:"領港通訊頻道？", o:["頻道 12","頻道 13","頻道 14","頻道 15"], a:0, e:"頻道 12 常用於領港通訊。" },
+    { q:"字母 A 的標準讀法？", o:["Alpha","Alfa","Apple","Ace"], a:0, e:"A 讀作 Alpha。" },
+    { q:"字母 B 的標準讀法？", o:["Bravo","Beta","Boy","Ball"], a:0, e:"B 讀作 Bravo。" },
+    { q:"海事處廣播頻道？", o:["頻道 14","頻道 16","頻道 22","頻道 84"], a:0, e:"頻道 14 用於海事處廣播。" },
+    { q:"字母 C 的標準讀法？", o:["Charlie","Carl","Cat","Cent"], a:0, e:"C 讀作 Charlie。" },
+    { q:"字母 D 的標準讀法？", o:["Delta","David","Dog","Dan"], a:0, e:"D 讀作 Delta。" },
+    { q:"搜救協調頻道？", o:["頻道 16","頻道 70","頻道 22","頻道 83"], a:0, e:"搜救協調主要在頻道 16 進行。" },
+    { q:"字母 F 的標準讀法？", o:["Foxtrot","Fox","Four","Fast"], a:0, e:"F 讀作 Foxtrot。" },
+    { q:"字母 G 的標準讀法？", o:["Golf","George","Go","Good"], a:0, e:"G 讀作 Golf。" },
+    { q:"防污通訊頻道？", o:["頻道 81","頻道 18","頻道 82","頻道 83"], a:0, e:"頻道 81 常用於防污通訊。" },
+    { q:"字母 H 的標準讀法？", o:["Hotel","Henry","House","High"], a:0, e:"H 讀作 Hotel。" },
+    { q:"工程船通訊頻道？", o:["頻道 62","頻道 63","頻道 64","頻道 65"], a:0, e:"頻道 62 常用於工程船。" },
+    { q:"字母 V 的標準讀法？", o:["Victor","Van","Very","Voice"], a:0, e:"V 讀作 Victor。" },
+    { q:"字母 X 的標準讀法？", o:["X-ray","Xenon","Xerox","Mix"], a:0, e:"X 讀作 X-ray。" },
+    { q:"字母 Y 的標準讀法？", o:["Yankee","Yellow","Yes","Young"], a:0, e:"Y 讀作 Yankee。" },
+    { q:"字母 Q 的標準讀法？", o:["Quebec","Queen","Quick","Query"], a:0, e:"Q 讀作 Quebec。" },
+    { q:"頻道 16 的頻率是多少？", o:["156.8 MHz","156.5 MHz","157.0 MHz","156.0 MHz"], a:0, e:"頻道 16 的頻率為 156.8 MHz。" },
+    { q:"DSC 遇險按鈕應按住多久？", o:["5秒","3秒","10秒","1秒"], a:0, e:"DSC 遇險按鈕應按住至少 5 秒。" },
+    { q:"VHF 通訊的有效距離約為？", o:["視距範圍約30-50海浬","100海浬以上","10海浬以內","全球範圍"], a:0, e:"VHF 為視距通訊，約 30-50 海浬。" },
+    { q:"船舶遇險時首先應？", o:["發射 MAYDAY 呼叫","聯絡家人","等待救援","拋錨"], a:0, e:"遇險時應立即發射 MAYDAY 呼叫。" },
+    { q:"PAN-PAN 的正確讀法？", o:["帕恩-帕恩","潘-潘","盤-盤","畔-畔"], a:0, e:"讀作「帕恩-帕恩」。" },
+    { q:"SÉCURITÉ 的正確讀法？", o:["瑟居希德","賽居瑞德","斯古裏特","西居裏特"], a:0, e:"讀作「瑟居希德」。" },
+    { q:"船對岸電話使用哪種通訊模式？", o:["雙工 Duplex","單工 Simplex","半雙工","調頻"], a:0, e:"船對岸電話使用雙工通訊。" },
+    { q:"VHF 頻道的頻寬通常為？", o:["25 kHz","5 kHz","50 kHz","100 kHz"], a:0, e:"VHF 頻道頻寬通常為 25 kHz。" },
+    { q:"以下哪個是國際海事衛星組織？", o:["INMARSAT","Iridium","Globalstar","ORBCOMM"], a:0, e:"INMARSAT 是國際海事衛星組織。" },
+    { q:"EPIRB 是什麼的縮寫？", o:["應急位置指示無線電信標","緊急電源供應器","電子定位系統","應急通訊裝置"], a:0, e:"EPIRB = Emergency Position Indicating Radio Beacon。" },
+    { q:"SART 的作用是？", o:["搜救雷達應答器","衛星定位","通訊中繼","天氣監測"], a:0, e:"SART = Search and Rescue Radar Transponder。" },
+    { q:"GMDSS 代表什麼？", o:["全球海上遇險和安全系統","通用海上通訊系統","全球海事導航系統","船用雷達系統"], a:0, e:"GMDSS = Global Maritime Distress and Safety System。" },
+    { q:"AIS 代表什麼？", o:["自動識別系統","自動資訊服務","自動儀器系統","自動導航系統"], a:0, e:"AIS = Automatic Identification System。" },
+    { q:"VHF 頻道 70 用於？", o:["DSC 數位選擇呼叫","語音通訊","氣象廣播","遇險語音"], a:0, e:"頻道 70 專用於 DSC。" },
+    { q:"頻道 13 的功率限制？", o:["1W","25W","5W","10W"], a:0, e:"頻道 13 限用低功率 1W。" },
+    { q:"以下哪個不是 GMDSS 的組成部分？", o:["VHF 無線電","衛星通訊","海底電纜","MF/HF 無線電"], a:2, e:"海底電纜不是 GMDSS 組成部分。" },
+    { q:"船舶應配備多少個 EPIRB？", o:["至少1個","2個","3個","不需要"], a:0, e:"每艘船至少應配備 1 個 EPIRB。" },
+    { q:"DSC 呼叫中，「All Ships」表示？", o:["呼叫所有船隻","呼叫特定船隻","測試呼叫","群呼"], a:0, e:"All Ships 表示呼叫所有船隻。" },
+    { q:"VHF 通訊中，訊號衰減的主要原因是？", o:["大氣吸收和大氣折射","太陽風","雷達干擾","海浪反射"], a:0, e:"大氣吸收和折射是主要衰減原因。" },
+    { q:"船舶在港口內應使用什麼功率？", o:["低功率 1W","全功率 25W","中功率 10W","視情況而定"], a:0, e:"港口內應使用低功率以避免干擾。" },
+    { q:"遇險電文中，遇險性質不包括？", o:["船長姓名","碰撞","火災","進水"], a:0, e:"船長姓名不是遇險性質。" },
+    { q:"以下哪個頻道用於國際航行安全資訊？", o:["頻道 16 和 NAVTEX","頻道 6","頻道 9","頻道 13"], a:0, e:"NAVTEX 和頻道 16 用於航行安全資訊。" },
+    { q:"VHF 天線的阻抗通常為？", o:["50 歐姆","75 歐姆","100 歐姆","25 歐姆"], a:0, e:"VHF 天線阻抗通常為 50 歐姆。" },
+    { q:"船舶電台的呼號由誰分配？", o:["國際電信聯盟 ITU","船東","船廠","船長"], a:0, e:"呼號由 ITU 分配的國家主管機關核發。" },
+    { q:"在 GMDSS 中，VHF DSC 的覆蓋範圍約為？", o:["視距範圍","全球","半個地球","1000海浬"], a:0, e:"VHF DSC 僅在視距範圍內有效。" },
+    { q:"船舶進入香港水域前應？", o:["在頻道16守聽並按規定向海事處報告","直接呼叫港口","關閉電台","切換至頻道9"], a:0, e:"應在頻道 16 守聽並向海事處報告。" },
+    { q:"頻道 16 的守聽義務是？", o:["所有船舶在任何時候都應守聽","只在遇險時守聽","每天守聽一次","不需要守聽"], a:0, e:"所有船舶在任何時候都應守聽頻道 16。" },
+    { q:"以下哪種情況不需要使用 MAYDAY？", o:["引擎故障但安全","船隻正在沉沒","人員嚴重受傷","火災失控"], a:0, e:"引擎故障但安全不構成立即生命威脅，使用 PAN-PAN。" },
+    { q:"VHF 通訊的最佳發射角度？", o:["垂直天線朝上","水平天線","朝向前方","朝向下方"], a:0, e:"垂直天線提供最佳的全方位覆蓋。" },
+    { q:"以下哪個是香港的 VHF 頻道分配機構？", o:["通訊事務管理局 OFCA","海事處","警務處","運輸署"], a:0, e:"OFCA 負責頻道分配。" },
+    { q:"船舶應如何測試 VHF 設備？", o:["定期在頻道16發射測試信號","每天向海岸電台報告","不需要測試","只在故障時檢查"], a:0, e:"應定期在頻道 16 進行測試呼叫。" }
+];
+
+// ===================== 工具函數 =====================
+function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+}
+
+// 為 B 部題目隨機打散選項順序，使 ABCD 均勻分佈
+function shuffleBOptions(rawQ) {
+    var opts = rawQ.o.slice();
+    var correctText = rawQ.o[rawQ.a];
+    // 打散選項
+    var idx = opts.map(function(_, i) { return i; });
+    idx = shuffle(idx);
+    var newOpts = idx.map(function(i) { return opts[i]; });
+    var newAns = idx.indexOf(rawQ.a);
+    return { q: rawQ.q, options: newOpts, ans: newAns, exp: rawQ.e, correctText: correctText };
+}
+
+// ===================== 全域變數 =====================
+var examA = [];       // A部本次考試題目（2題）
+var examB = [];       // B部本次考試題目（40題，含打散後的選項）
+var aIndex = 0;       // A部當前題目索引
+var bIndex = 0;       // B部當前檢視題目索引
+var bAnswers = [];    // B部作答記錄（索引對應 examB）
+var timeLeft = 5400;  // 90分鐘
+var timerInt = null;
+var examStarted = false;
+
+// ===================== DOM =====================
+var $ = function(id) { return document.getElementById(id); };
+var aContent = $("aContent");
+var bContent = $("bContent");
+var startBtn = $("startBtn");
+var timerDisplay = $("timerDisplay");
+var aCount = $("aCount");
+var bCount = $("bCount");
+var tabA = $("tabA");
+var tabB = $("tabB");
+var panelA = $("panelA");
+var panelB = $("panelB");
+var scoreArea = $("scoreArea");
+var bBottomBtns = $("bBottomBtns");
+var submitBtn = $("submitBtn");
+var resetBtn = $("resetBtn");
+
+// ===================== 考試流程 =====================
+function startExam() {
+    if (examStarted) return;
+    examStarted = true;
+
+    // 隨機抽題
+    var aPool = shuffle(partAPool).slice(0, 2);
+    var bRaw = shuffle(bPoolRaw).slice(0, 40);
+    examA = aPool;
+    examB = bRaw.map(function(q) { return shuffleBOptions(q); });
+    aIndex = 0;
+    bIndex = 0;
+    bAnswers = new Array(40).fill(null);
+
+    // 更新 UI
+    startBtn.disabled = true;
+    startBtn.textContent = "✅ 考試進行中";
+    startBtn.style.background = "#aaa";
+    bBottomBtns.style.display = "none";
+    scoreArea.innerHTML = "";
+
+    // 計時器
+    timeLeft = 5400;
+    clearInterval(timerInt);
+    timerInt = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // 顯示 A 部第一題
+    renderA();
+    updateCounts();
+}
+
+function updateTimer() {
+    timeLeft--;
+    var m = Math.floor(timeLeft / 60);
+    var s = timeLeft % 60;
+    timerDisplay.textContent = "⏱ " + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    if (timeLeft <= 0) {
+        clearInterval(timerInt);
+        alert("⏰ 時間到！考試自動提交。");
+        submitExam();
+    }
+}
+
+// ===================== A 部 =====================
+function renderA() {
+    if (aIndex >= 2) {
+        aContent.innerHTML = '<div style="text-align:center;padding:20px;"><p style="color:#28a745;font-size:18px;font-weight:600;">✅ A 部已完成！</p><p style="margin-top:8px;color:#666;">請點擊上方「B部 — 選擇題」繼續。</p></div>';
+        // 自動切到 B 部
+        setTimeout(function() { tabB.click(); }, 1500);
+        return;
+    }
+    var q = examA[aIndex];
+    var html = "";
+    html += '<div class="q-card">';
+    html += '<div class="q-title">📝 A' + (aIndex + 1) + '（共2題）</div>';
+    html += '<div class="q-body">' + q.scenario + '</div>';
+    html += '<textarea id="aText" placeholder="在此輸入您的答案..."></textarea>';
+    html += '<div class="btn-row">';
+    html += '<button class="btn btn-primary" onclick="showARef(' + aIndex + ')">📖 顯示參考答案</button>';
+    html += '<button class="btn btn-success" onclick="goNextA()">➡️ 下一題</button>';
+    html += '</div>';
+    html += '<div class="ref-answer" id="aRef"></div>';
+    html += '</div>';
+    aContent.innerHTML = html;
+}
+
+function showARef(idx) {
+    var q = examA[idx];
+    var ref = $("aRef");
+    var html = "<h4>✅ 參考答案</h4><pre style=\"white-space:pre-wrap;font-family:inherit;\">" + q.ref + "</pre><p style=\"margin-top:6px;color:#155724;\"><strong>📋 評分要點：</strong></p><ul>";
+    q.points.forEach(function(p) { html += "<li>" + p + "</li>"; });
+    html += "</ul>";
+    ref.innerHTML = html;
+    ref.classList.add("show");
+}
+
+function goNextA() {
+    aIndex++;
+    renderA();
+    updateCounts();
+}
+
+// ===================== B 部 =====================
+function renderBList() {
+    var html = '<div class="b-list">';
+    for (var i = 0; i < examB.length; i++) {
+        var q = examB[i];
+        var answered = bAnswers[i] !== null;
+        var isCorrect = answered && bAnswers[i] === q.ans;
+        var bgColor = !answered ? "#f8f9fa" : (isCorrect ? "#d4edda" : "#f8d7da");
+        var icon = !answered ? "⬜" : (isCorrect ? "✅" : "❌");
+        html += '<div class="b-item' + (i === bIndex ? " active" : "") + '" style="background:' + bgColor + ';" onclick="goBDetail(' + i + ')">';
+        html += '<span class="num">B' + (i + 1) + '.</span> ' + q.q.substring(0, 48) + (q.q.length > 48 ? "..." : "");
+        html += '<span class="status">' + icon + '</span>';
+        html += '</div>';
+    }
+    html += '</div>';
+    html += '<div style="text-align:center;margin-top:12px;color:#666;font-size:13px;">⬜ 未作答 | ✅ 正確 | ❌ 錯誤</div>';
+    bContent.innerHTML = html;
+}
+
+function goBDetail(idx) {
+    bIndex = idx;
+    var q = examB[idx] || examB[idx % examB.length];
+    var realIdx = idx;
+    if (idx >= examB.length) realIdx = idx % examB.length;
+    q = examB[realIdx];
+    var letters = ["A", "B", "C", "D"];
+    var answered = bAnswers[realIdx] !== null;
+
+    var html = '<div class="b-detail">';
+    html += '<div class="q-card">';
+    html += '<div class="q-text"><strong>B' + (realIdx + 1) + '.</strong> ' + q.q + '</div>';
+
+    for (var i = 0; i < q.options.length; i++) {
+        var cls = "";
+        var icon = "";
+        if (answered) {
+            if (i === q.ans) { cls = "correct"; icon = " ✅"; }
+            else if (i === bAnswers[realIdx]) { cls = "wrong"; icon = " ❌"; }
+        }
+        html += '<button class="opt-btn ' + cls + '" onclick="selectB(' + realIdx + ',' + i + ')" ' + (answered ? "disabled" : "") + '>';
+        html += letters[i] + '. ' + q.options[i] + icon;
+        html += '</button>';
+    }
+
+    // 解析區
+    var expCls = "";
+    var expText = "";
+    if (answered) {
+        if (bAnswers[realIdx] === q.ans) {
+            expCls = "correct";
+            expText = "✅ 正確！ " + q.exp;
+        } else {
+            expCls = "wrong";
+            expText = "❌ 錯誤。正確答案是 " + letters[q.ans] + ". " + q.options[q.ans] + "<br><span style=\"color:#155724;\">📖 " + q.exp + "</span>";
+        }
+    }
+    html += '<div class="exp-box ' + expCls + (answered ? " show" : "") + '" id="bExp">' + expText + '</div>';
+
+    // 導航按鈕
+    html += '<div class="btn-row" style="margin-top:12px;">';
+    if (realIdx > 0) {
+        html += '<button class="btn btn-outline" onclick="goBDetail(' + (realIdx - 1) + ')">⬅️ 上一題</button>';
+    }
+    if (realIdx < examB.length - 1) {
+        html += '<button class="btn btn-primary" onclick="goBDetail(' + (realIdx + 1) + ')">➡️ 下一題</button>';
+    } else {
+        html += '<button class="btn btn-warning" onclick="scrollToBottom()">📋 返回列表</button>';
+    }
+    html += '</div>';
+    html += '</div>'; // q-card
+    html += '</div>'; // b-detail
+
+    bContent.innerHTML = html;
+}
+
+function selectB(idx, sel) {
+    if (bAnswers[idx] !== null) return; // 已作答不可改
+    bAnswers[idx] = sel;
+    goBDetail(idx); // 重新渲染（會顯示正確/錯誤狀態）
+    updateCounts();
+}
+
+function scrollToBottom() {
+    renderBList();
+    // 滾到列表底部（提交按鈕區）
+    setTimeout(function() {
+        var el = $("bBottomBtns");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+}
+
+// ===================== 提交與計分 =====================
+function submitExam() {
+    clearInterval(timerInt);
+    examStarted = false;
+
+    // 計算分數
+    var bScore = 0;
+    var detailRows = "";
+    var letters = ["A", "B", "C", "D"];
+
+    for (var i = 0; i < examB.length; i++) {
+        var q = examB[i];
+        var ans = bAnswers[i];
+        var isCorrect = ans === q.ans;
+        if (isCorrect) bScore += 2.5;
+        var yourAns = ans === null ? "⬜ 未答" : letters[ans] + ". " + q.options[ans];
+        var correctAns = letters[q.ans] + ". " + q.options[q.ans];
+        var icon = ans === null ? "⬜" : (isCorrect ? "✅" : "❌");
+        var rowCls = ans === null ? "" : (isCorrect ? "ok" : "no");
+        detailRows += "<tr class=\"" + rowCls + "\">";
+        detailRows += "<td>B" + (i + 1) + "</td>";
+        detailRows += "<td>" + q.q.substring(0, 60) + "</td>";
+        detailRows += "<td>" + yourAns + "</td>";
+        detailRows += "<td>" + correctAns + "</td>";
+        detailRows += "<td style=\"font-size:16px;\">" + icon + "</td>";
+        detailRows += "</tr>";
+    }
+
+    var totalScore = bScore; // A部需人工評分，這裡只計B部
+    var passed = totalScore >= 75;
+
+    var html = "";
+    html += '<div class="result-wrap">';
+    html += '<div class="result-summary">';
+    html += '<h2>🏆 考試結果</h2>';
+    html += '<div class="big-score">' + totalScore.toFixed(1) + ' / 100</div>';
+    html += '<div class="verdict" style="color:' + (passed ? "#28a745" : "#dc3545") + ';">';
+    html += passed ? "🎉 及格！恭喜你！" : "😢 不及格，再接再厲！";
+    html += '</div>';
+    html += '<p style="margin-top:8px;color:#666;font-size:13px;">📌 以上為 B 部自動評分（滿分100）。A 部請對照參考答案自行評分。</p>';
+    html += '</div>';
+
+    // 答案總表
+    html += '<h3 style="margin:16px 0 8px;color:#003366;">📋 B 部答案總表</h3>';
+    html += '<div style="overflow-x:auto;">';
+    html += '<table class="result-table">';
+    html += '<tr><th>題號</th><th>題目</th><th>你的答案</th><th>正確答案</th><th>結果</th></tr>';
+    html += detailRows;
+    html += '</table>';
+    html += '</div>';
+
+    html += '<div style="text-align:center;margin-top:20px;">';
+    html += '<button class="btn btn-primary" onclick="resetAll()" style="padding:12px 36px;font-size:16px;">🔄 重新開始</button>';
+    html += '</div>';
+    html += '</div>';
+
+    scoreArea.innerHTML = html;
+
+    // 滾動到結果區
+    setTimeout(function() {
+        scoreArea.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+}
+
+function resetAll() {
+    clearInterval(timerInt);
+    examStarted = false;
+    aIndex = 0;
+    bIndex = 0;
+    bAnswers = [];
+    examA = [];
+    examB = [];
+    scoreArea.innerHTML = "";
+    bBottomBtns.style.display = "none";
+    startBtn.disabled = false;
+    startBtn.textContent = "🚀 開始考試";
+    startBtn.style.background = "";
+    timerDisplay.textContent = "⏱ 90:00";
+    aContent.innerHTML = '<p style="text-align:center;color:#888;margin:40px 0;">🚀 請點擊下方「開始考試」按鈕載入題目</p>';
+    bContent.innerHTML = '<p style="text-align:center;color:#888;margin:40px 0;">📝 請先完成 A 部或點擊「開始考試」</p>';
+    updateCounts();
+    // 切回 A 部
+    tabA.click();
+}
+
+// ===================== 更新計數 =====================
+function updateCounts() {
+    var aDone = Math.min(aIndex, 2);
+    aCount.textContent = aDone + "/2";
+    var bDone = bAnswers.filter(function(a) { return a !== null; }).length;
+    bCount.textContent = bDone + "/40";
+    // 當 B 部有題目且考試進行中，顯示底部按鈕
+    if (examB.length > 0 && examStarted) {
+        bBottomBtns.style.display = "block";
+    }
+}
+
+// ===================== Tab 切換 =====================
+tabA.addEventListener("click", function() {
+    tabA.classList.add("active");
+    tabB.classList.remove("active");
+    panelA.classList.add("active");
+    panelB.classList.remove("active");
+});
+
+tabB.addEventListener("click", function() {
+    tabB.classList.add("active");
+    tabA.classList.remove("active");
+    panelB.classList.add("active");
+    panelA.classList.remove("active");
+    if (examStarted && examB.length > 0) {
+        renderBList();
+        bBottomBtns.style.display = "block";
+    }
+});
+
+// ===================== 按鈕綁定 =====================
+startBtn.addEventListener("click", startExam);
+submitBtn.addEventListener("click", submitExam);
+resetBtn.addEventListener("click", resetAll);
+
+// 初始狀態
+updateCounts();
+console.log("✅ VHF 模擬考試系統已載入");
+</script>
+</body>
+</html>
