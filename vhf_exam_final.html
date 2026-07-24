@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>📡 VHF 模擬考試</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#0f2b5e;--primary-light:#1a4a8a;--accent:#f5b400;
+  --green:#27ae60;--red:#e74c3c;--orange:#f39c12;
+  --bg:#f0f2f5;--card:#fff;--text:#1a1a2e;--muted:#7a8a9e;
+  --border:#e2e8f0;--radius:12px;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;padding:0;
+  -webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button{font-family:inherit}
+
+/* Layout */
+#app{max-width:820px;margin:0 auto;background:var(--card);min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.08)}
+
+/* Header */
+header{
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;padding:16px 16px 12px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(15,43,94,.3)
+}
+header h1{font-size:1.2rem;font-weight:700;display:flex;align-items:center;gap:6px}
+header .sub{font-size:.75rem;color:rgba(255,255,255,.7);margin-top:2px;margin-left:26px}
+.timer-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:0 2px}
+.timer{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  padding:3px 12px;border-radius:20px;font-size:.9rem;font-weight:700;
+  font-variant-numeric:tabular-nums;letter-spacing:1px
+}
+.timer.warn{background:var(--red);border-color:#c0392b;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.timer-lbl{font-size:.7rem;color:rgba(255,255,255,.6)}
+
+/* Tabs */
+.tabs{display:flex;background:#e8ecf1;padding:3px;gap:3px}
+.tab{
+  flex:1;padding:9px 4px;border:none;background:transparent;color:#5a6a7e;
+  font-size:.85rem;font-weight:600;border-radius:7px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  transition:all .2s;-webkit-appearance:none;appearance:none;
+}
+.tab:active{transform:scale(.97)}
+.tab.on{background:#fff;color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.tab .badge{font-size:.68rem;background:#dce3ec;color:#5a6a7e;padding:1px 7px;border-radius:10px;font-weight:500}
+.tab.on .badge{background:var(--primary);color:#fff}
+
+/* Progress */
+.prog{padding:10px 16px 6px;background:#fff;border-bottom:1px solid #eef1f5}
+.prog-row{display:flex;align-items:center;gap:8px}
+.prog-lbl{font-size:.75rem;color:var(--muted);white-space:nowrap;min-width:48px}
+.prog-track{flex:1;height:5px;background:#e8ecf1;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;width:0%;border-radius:3px;transition:width .4s;background:linear-gradient(90deg,var(--green),#2ecc71)}
+.prog-pct{font-size:.75rem;font-weight:600;color:var(--primary);min-width:32px;text-align:right}
+
+/* Content */
+main{padding:14px 16px 100px;min-height:40vh}
+.panel{display:none}
+.panel.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Section header */
+.sec-head{
+  background:#f8fafc;border-left:4px solid var(--primary);
+  padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:12px
+}
+.sec-head h2{font-size:.95rem;color:var(--primary)}
+.sec-head p{font-size:.75rem;color:var(--muted);margin-top:2px;line-height:1.5}
+
+/* Card */
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)
+}
+.q-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px}
+.q-num{
+  font-size:.8rem;font-weight:700;color:var(--primary);
+  background:#eef3f9;padding:2px 10px;border-radius:16px
+}
+.tag{font-size:.68rem;padding:2px 7px;border-radius:9px;font-weight:500}
+.tag-tech{background:#ede7f6;color:#5e35b1}
+.tag-ch{background:#fff3e0;color:#e65100}
+.tag-dis{background:#ffebee;color:#c62828}
+.tag-proc{background:#e8f5e9;color:#2e7d32}
+.tag-reg{background:#e3f2fd;color:#1565c0}
+.tag-wr{background:#f3e5f5;color:#6a1b9a}
+.q-stat{font-size:.72rem;color:#95a5a6}
+.q-stat.ok{color:var(--green);font-weight:600}
+.q-txt{font-size:.88rem;line-height:1.65;color:#2c3e50;margin-bottom:10px}
+.q-txt strong{color:#c0392b}
+
+/* Writing */
+.write label{display:block;font-size:.82rem;font-weight:600;color:var(--primary);margin-bottom:5px}
+textarea{
+  width:100%;min-height:110px;padding:10px 12px;
+  border:1.5px solid #dce3ec;border-radius:9px;font-size:.85rem;
+  font-family:"Courier New",monospace;line-height:1.6;resize:vertical;
+  transition:border-color .2s,box-shadow .2s;background:#fafbfc;-webkit-appearance:none;
+}
+textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(15,43,94,.1);background:#fff}
+
+/* Ref */
+.ref{
+  display:none;margin-top:10px;background:#f0f9f0;border:1px solid #b8e6b8;
+  border-radius:9px;padding:12px;animation:slide .3s ease
+}
+.ref.on{display:block}
+@keyframes slide{from{max-height:0;opacity:0}to{max-height:2000px;opacity:1}}
+.ref-t{font-weight:700;color:#1b7a2e;font-size:.85rem;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.ref-b{
+  font-family:"Courier New",monospace;font-size:.8rem;line-height:1.65;
+  color:#1a5e2a;white-space:pre-wrap;background:#fff;padding:8px 10px;
+  border-radius:7px;border:1px solid #d5e8d5;margin-bottom:6px
+}
+.ref-tips{font-size:.78rem;color:#2e7d32;line-height:1.65}
+.ref-tips ul{padding-left:16px;margin:3px 0}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:5px}
+.opt{
+  display:flex;align-items:flex-start;gap:8px;padding:9px 12px;
+  background:#f8fafc;border:1.5px solid var(--border);border-radius:9px;
+  cursor:pointer;transition:all .15s;-webkit-appearance:none;
+  font-size:.85rem;line-height:1.45;color:#2c3e50;
+  -webkit-tap-highlight-color:transparent;
+}
+.opt:active{transform:scale(.99)}
+.opt.sel{background:#e8f0fe;border-color:#4a7fc9}
+.opt.correct{background:#d4edda;border-color:#28a745}
+.opt.wrong{background:#f8d7da;border-color:#dc3545}
+.opt.dis{cursor:default}
+.opt input{width:18px;height:18px;margin-top:1px;flex-shrink:0;accent-color:var(--primary)}
+
+/* Explanation */
+.exp{
+  display:none;margin-top:8px;padding:9px 12px;
+  background:#fffbe6;border-left:4px solid #f5b400;border-radius:0 8px 8px 0;
+  font-size:.82rem;line-height:1.55;color:#6b5900
+}
+.exp.on{display:block;animation:fade .3s}
+.exp .badge{display:inline-block;background:#28a745;color:#fff;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:9px;margin-bottom:3px}
+
+/* Buttons */
+.btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:6px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  padding:8px 14px;border:none;border-radius:8px;font-size:.82rem;font-weight:600;
+  cursor:pointer;transition:all .15s;-webkit-appearance:none;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-p{background:var(--primary);color:#fff}
+.btn-p:hover:not(:disabled){background:#1a3d7c}
+.btn-o{background:#fff;color:var(--primary);border:1.5px solid var(--primary)}
+.btn-o:hover:not(:disabled){background:#eef3f9}
+.btn-s{background:var(--green);color:#fff}
+.btn-s:hover:not(:disabled){background:#219a52}
+.btn-w{background:var(--accent);color:#1a1a2e}
+.btn-w:hover:not(:disabled){background:#dda000}
+.btn-d{background:var(--red);color:#fff}
+.btn-d:hover:not(:disabled){background:#c0392b}
+
+.btn-center{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+/* Submit sticky */
+.submit-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(255,255,255,.97);border-top:1px solid var(--border);
+  padding:10px 16px;display:flex;justify-content:center;gap:8px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+}
+@media(min-width:821px){.submit-bar{position:static;background:transparent;border:none;padding:0;backdrop-filter:none}}
+
+/* Result */
+.result{display:none;margin-top:14px;animation:fade .4s}
+.result.on{display:block}
+.rcard{
+  background:linear-gradient(135deg,#f8fafc,#eef3f9);border:2px solid var(--primary);
+  border-radius:14px;padding:20px;text-align:center
+}
+.rcard .ico{font-size:2.5rem;margin-bottom:6px}
+.score{font-size:2.8rem;font-weight:800;line-height:1.1}
+.score.pass{color:var(--green)}
+.score.fail{color:var(--red)}
+.rmsg{font-size:1rem;font-weight:600;margin:4px 0}
+.rdet{font-size:.8rem;color:var(--muted);line-height:1.5}
+
+/* Summary table */
+.sum{margin-top:14px}
+.sum h3{font-size:.95rem;color:var(--primary);margin-bottom:8px;text-align:center}
+.stbl{width:100%;border-collapse:collapse;font-size:.78rem;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stbl th{background:var(--primary);color:#fff;padding:7px 5px;text-align:left;font-size:.75rem}
+.stbl td{padding:6px 5px;border-bottom:1px solid #eef1f5;vertical-align:top;line-height:1.35}
+.stbl tr.ok td{background:#f0faf0}
+.stbl tr.no td{background:#fef5f5}
+.stbl .ci{width:24px;text-align:center}
+.stbl .cq{width:48%}
+.iok{color:var(--green);font-weight:700}
+.ino{color:var(--red);font-weight:700}
+
+/* Footer */
+footer{text-align:center;padding:14px 16px;font-size:.7rem;color:#95a5a6;border-top:1px solid #eef1f5;line-height:1.5}
+
+/* Mobile */
+@media(max-width:600px){
+  header{padding:12px 12px 8px}
+  header h1{font-size:1.05rem}
+  main{padding:10px 12px 120px}
+  .card{padding:12px 10px}
+  .q-txt{font-size:.85rem}
+  .opt{font-size:.82rem;padding:8px 10px}
+  .btn{padding:7px 12px;font-size:.78rem}
+  .btn-row{gap:4px}
+  .score{font-size:2.2rem}
+  .stbl{font-size:.72rem}
+  .stbl th,.stbl td{padding:5px 3px}
+  .submit-bar{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <h1><span>📡</span> VHF 無線電話模擬考試</h1>
+  <div class="sub">限用香港水域 · 參照海事處官方格式</div>
+  <div class="timer-row">
+    <span class="timer-lbl">考試倒計時</span>
+    <div class="timer" id="tDisp">⏱ 90:00</div>
+    <span class="timer-lbl" id="tStat">進行中</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab on" id="tabA" onclick="swTab('A')">✍️ A部·撰寫題<span class="badge" id="bcA">0/2</span></button>
+  <button class="tab" id="tabB" onclick="swTab('B')">📋 B部·選擇題<span class="badge" id="bcB">0/45</span></button>
+</div>
+
+<div class="prog">
+  <div class="prog-row">
+    <span class="prog-lbl" id="pLbl">A部進度</span>
+    <div class="prog-track"><div class="prog-fill" id="pFill"></div></div>
+    <span class="prog-pct" id="pPct">0%</span>
+  </div>
+</div>
+
+<main>
+  <!-- A部 -->
+  <div class="panel on" id="pA">
+    <div class="sec-head">
+      <h2>✍️ A部 — 遇險呼叫及遇險電文撰寫</h2>
+      <p>根據所提供資料，在輸入框內撰寫遇險呼叫和遇險電文，然後點擊「顯示參考答案」對照。A部每題滿分100分，及格75分。</p>
+    </div>
+    <div id="aContent"></div>
+  </div>
+
+  <!-- B部 -->
+  <div class="panel" id="pB">
+    <div class="sec-head">
+      <h2>📋 B部 — 選擇題（共45題）</h2>
+      <p>關於在香港水域使用甚高頻無線電話設備的規例、程序和技術事宜。每題2.5分，滿分112.5分，及格67.5分。</p>
+    </div>
+    <div id="bContent"></div>
+
+    <div class="result" id="rPanel">
+      <div class="rcard">
+        <div class="ico" id="rIco">🏆</div>
+        <div class="score" id="rScore">--</div>
+        <div class="rmsg" id="rMsg"></div>
+        <div class="rdet" id="rDet"></div>
+      </div>
+      <div class="sum">
+        <h3>📊 B部 答題總表</h3>
+        <table class="stbl" id="sTbl">
+          <thead><tr><th class="ci"></th><th class="cq">題目</th><th>你的答案</th><th>正確答案</th></tr></thead>
+          <tbody id="sBody"></tbody>
+        </table>
+      </div>
+      <div class="btn-center" style="margin-top:12px">
+        <button class="btn btn-p" onclick="doReset()">🔄 重新開始考試</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="submit-bar" id="sBar">
+  <button class="btn btn-s" id="sBtn" onclick="doSubmit()">🏁 提交考試並查看總表</button>
+  <button class="btn btn-o" onclick="doReset()">🔄 重新開始</button>
+</div>
+
+<footer>
+  本模擬考試僅供學習用途，題目參考香港通訊事務管理局辦公室（OFCA）VHF無線電話資格證書考試綱要編製。<br>
+  實際考試內容以 OFCA 官方網站公佈為準。A部及格75分，B部及格66分。
+</footer>
+</div>
+
+<script>
+"use strict";
+/* ===== A部答案 ===== */
+var wA={
+1:{t:"✅ 參考答案 — MAYDAY 遇險呼叫",b:
+"MAYDAY MAYDAY MAYDAY\n"+
+"ALL STATIONS ALL STATIONS ALL STATIONS\n"+
+"THIS IS 海燕 海燕 海燕\n"+
+"CALL SIGN VRHK\n"+
+"MAYDAY 海燕 VRHK\n"+
+"MY POSITION IS LATITUDE 22 DEGREES 17.5 MINUTES NORTH\n"+
+"LONGITUDE 114 DEGREES 13.2 MINUTES EAST\n"+
+"（即：維多利亞港東部水域，北角以東約2海浬）\n"+
+"I AM TAKING IN WATER DUE TO COLLISION\n"+
+"I REQUIRE IMMEDIATE ASSISTANCE\n"+
+"THERE ARE 4 PERSONS ON BOARD\n"+
+"VESSEL IS A PLEASURE CRAFT, WHITE HULL\n"+
+"OVER",p:["MAYDAY 呼叫三次","THIS IS + 船名三次 + 呼號","重複 MAYDAY + 船名 + 呼號","位置（經緯度或參照地標）","遇險性質（碰撞入水/正在下沉）","需要援助類型（緊急救援）","船上人數（4人）","船舶描述（船型、顏色、長度）","以 OVER 結束通話"]},
+2:{t:"✅ 參考答案 — PAN-PAN 緊急通告",b:
+"PAN-PAN PAN-PAN PAN-PAN\n"+
+"ALL STATIONS ALL STATIONS ALL STATIONS\n"+
+"THIS IS 東方之珠 東方之珠 東方之珠\n"+
+"PAN-PAN 東方之珠\n"+
+"MY POSITION IS WEST OF LAMMA ISLAND\n"+
+"（即：南丫島以西約1.5海浬，北緯22°12'N 東經114°06'E）\n"+
+"I HAVE A MAN OVERBOARD\n"+
+"CREW MEMBER IS WEARING A LIFEJACKET AND IS CONSCIOUS\n"+
+"REQUIRE IMMEDIATE ASSISTANCE FOR RESCUE\n"+
+"WEATHER IS FINE, VISIBILITY GOOD, WIND FORCE 4\n"+
+"I AM STANDING BY NEAR THE PERSON IN WATER\n"+
+"OVER",p:["PAN-PAN 呼叫三次（非MAYDAY，因為人員穿救生衣且清醒）","ALL STATIONS（發給所有電台）","THIS IS + 船名三次","重複 PAN-PAN + 船名","位置（南丫島以西/經緯度）","緊急性質（人員墮海）","人員狀況（穿救生衣、清醒）","需要的援助（救援）","輔助資訊（天氣、能見度、風力）","以 OVER 結束通話"]}
+};
+
+/* ===== B部題庫 ===== */
+var Q=[
+/* 技術 11 */
+{q:"VHF收發機的最大及最小輸出功率分別是多少？",o:["最大10瓦，最小0.5瓦","最大25瓦，最小1瓦","最大50瓦，最小2瓦","最大100瓦，最小5瓦"],a:1,tag:"tech",tl:"技術",e:"VHF收發機最大輸出功率為<strong>25瓦</strong>（高功率），最小為<strong>1瓦</strong>（低功率）。低功率用於近距離通訊，可減少干擾及節省電力。"},
+{q:"下列哪一項正確描述「單工」（Simplex）通訊？",o:["使用兩個頻率，同時收發","使用一個頻率，交替收發","使用兩個頻率，交替收發","使用一個頻率，同時收發"],a:1,tag:"tech",tl:"技術",e:"<strong>單工（Simplex）</strong>使用單一頻率，通訊雙方<strong>交替</strong>進行發射和接收，不能同時收發。雙工（Duplex）才用兩個頻率同時收發。"},
+{q:"「雙頻監聽」（Dual Watch）的功能是甚麼？",o:["同時在兩個頻道發射信號","同時收聽第16頻道和一個自選頻道","自動切換高功率和低功率","監聽所有VHF頻道"],a:1,tag:"tech",tl:"技術",e:"<strong>雙頻監聽</strong>讓VHF同時監聽<strong>第16頻道</strong>（遇險頻道）和<strong>一個自選的工作頻道</strong>，確保不會錯過遇險呼叫。"},
+{q:"靜噪音裝置（Squelch）的作用是甚麼？",o:["增強發射功率","無信號時抑制雜音，只在有信號時開啟音頻輸出","自動調整天線方向","防止電池過熱"],a:1,tag:"tech",tl:"技術",e:"<strong>靜噪音（Squelch）</strong>在沒有有效信號時<strong>自動抑制</strong>背景噪音，只在接收到有效信號時才開啟音頻輸出。"},
+{q:"VHF無線電通訊主要受甚麼因素限制其最大通訊距離？",o:["天氣和海浪","地球曲率和視線距離","電池容量","天線顏色"],a:1,tag:"tech",tl:"技術",e:"VHF屬<strong>視距傳播</strong>，最大距離約25-50海浬，主要受<strong>地球曲率</strong>限制。天線越高，覆蓋越廣。"},
+{q:"船上VHF天線安裝高度有何安全限制？",o:["沒有限制，越高越好","不可高過船上的避雷針","不可超過船桅高度的一半","不可超過5米"],a:1,tag:"tech",tl:"技術",e:"VHF天線不可高過<strong>船上的避雷針</strong>，以免雷擊損壞設備。同時天線應遠離人員活動區域。"},
+{q:"VHF天線的極化方式通常是哪一種？",o:["水平極化","垂直極化","圓極化","斜極化"],a:1,tag:"tech",tl:"技術",e:"VHF船舶天線通常採用<strong>垂直極化</strong>（Vertical Polarization），發射和接收雙方天線極化方向須一致。"},
+{q:"DSC（數位選擇呼叫）使用哪個VHF頻道？",o:["頻道16","頻道70","頻道6","頻道13"],a:1,tag:"tech",tl:"技術",e:"DSC專用<strong>頻道70</strong>（156.525 MHz），只可用於DSC數位信號，<strong>禁止用於話音通訊</strong>。"},
+{q:"在DSC系統中，遇險按鈕應持續按下至少多久？",o:["1秒","3秒","5秒","10秒"],a:2,tag:"tech",tl:"技術",e:"DSC遇險按鈕需持續按下至少<strong>5秒</strong>，以防止誤觸發而發出虛假遇險警報。"},
+{q:"VHF無線電波屬於哪一種傳播方式？",o:["地波傳播","天波傳播（經電離層反射）","視距傳播（直線傳播）","地下傳播"],a:2,tag:"tech",tl:"技術",e:"VHF無線電波屬<strong>視距傳播</strong>（Line-of-Sight），信號以直線方式傳播，不能繞過地平線。天線越高覆蓋越廣。"},
+{q:"在VHF通訊中，數字「0」應讀作甚麼？",o:["zero","oh","nada","nought"],a:0,tag:"tech",tl:"技術",e:"數字「0」應讀作<strong>ZERO</strong>，不是\"oh\"，以避免與字母「O」混淆。"},
+
+/* 法例 8 */
+{q:"「限用無線電話證書（香港水域）」持有人可操作何類設施？",o:["任何船舶的VHF和MF/HF無線電設備","300總噸以下船舶或香港水域內船舶/海岸電台的VHF無線電話機","只可操作手提式VHF對講機","可操作所有類型的無線電發射設備"],a:1,tag:"reg",tl:"法例",e:"「限用」證書持有人只可操作<strong>300總噸以下船舶</strong>或<strong>香港水域內</strong>船舶及海岸電台的VHF無線電話機。"},
+{q:"根據香港法例，誰對船上VHF無線電台有絕對控制權？",o:["持證無線電操作員","船長或輪船負責人","海事處人員","擁有該船的船東"],a:1,tag:"reg",tl:"法例",e:"<strong>船長或輪船負責人</strong>對船上VHF無線電台擁有<strong>絕對控制權</strong>，即使在遇險情況下最終決定權仍在船長。"},
+{q:"VHF無線電台牌照可向哪個政府部門領取？",o:["海事處","運輸署","通訊事務管理局辦公室（OFCA）","香港海關"],a:2,tag:"reg",tl:"法例",e:"VHF無線電台牌照由<strong>通訊事務管理局辦公室（OFCA）</strong>發出。根據《電訊條例》，設置或使用無線電設備必須持有有效牌照。"},
+{q:"何時應使用低功率（1瓦）輸出？為甚麼？",o:["在緊急情況下使用，以節省電力","在近距離通訊時使用，以減少干擾其他電台","在大霧天氣使用，以增強穿透力","永遠不應使用低功率"],a:1,tag:"reg",tl:"法例",e:"<strong>近距離通訊</strong>時應使用<strong>低功率（1瓦）</strong>，目的是<strong>減少對其他電台的干擾</strong>，同時節省電力。"},
+{q:"通訊員嚴禁作出下列哪種行為？",o:["使用標準程序用語","在未經許可的頻道上進行通訊","在遇險時發出MAYDAY","記錄通訊日誌"],a:1,tag:"reg",tl:"法例",e:"通訊員<strong>嚴禁</strong>在未經許可的頻道上進行通訊、發送虛假遇險信號或干擾合法通訊。違者可被檢控及吊銷證書。"},
+{q:"香港VHF合格證書的有效期是多久？",o:["1年","3年","5年","永久有效"],a:2,tag:"reg",tl:"法例",e:"香港VHF無線電話資格證書有效期為<strong>5年</strong>，期滿須按規定續期。"},
+{q:"持有「限用香港水域」VHF證書的人可以在哪裡操作？",o:["全球任何水域","香港水域","中國沿海","公海"],a:1,tag:"reg",tl:"法例",e:"「限用」證書持有人<strong>只可在香港水域內</strong>操作VHF無線電話機。"},
+{q:"VHF頻道16的主要用途是甚麼？",o:["船與岸之間通話","國際遇險、安全和呼叫頻道","港口操作","氣象廣播"],a:1,tag:"reg",tl:"法例",e:"<strong>頻道16</strong>（156.800 MHz）是<strong>國際遇險、安全和呼叫頻道</strong>，所有船舶必須保持守聽。非遇險情況下嚴禁佔用。"},
+
+/* 頻道 11 */
+{q:"在香港水域，「香港拖輪」服務使用哪個VHF頻道？",o:["頻道6","頻道9","頻道13","頻道16"],a:1,tag:"ch",tl:"頻道",e:"「<strong>香港拖輪</strong>」服務使用<strong>頻道9</strong>（156.450 MHz）。"},
+{q:"「香港領航員」服務使用哪些VHF頻道？",o:["頻道6和8","頻道9和11","頻道12和14","頻道16和70"],a:1,tag:"ch",tl:"頻道",e:"「<strong>香港領航員</strong>」服務使用<strong>頻道9</strong>和<strong>頻道11</strong>。"},
+{q:"在香港，頻道11（Channel 11）的主要用途是甚麼？",o:["船舶交通服務(VTS)","天氣預報","娛樂通訊","漁業通訊"],a:0,tag:"ch",tl:"頻道",e:"頻道11主要用於<strong>船舶交通服務（VTS）</strong>，特別是與領航員相關的通訊協調。"},
+{q:"頻道6（Channel 6）的主要用途是甚麼？",o:["國際遇險呼叫","DSC數位選擇呼叫","船與船工作通訊，以及船與搜救飛機通訊","港口作業通訊"],a:2,tag:"ch",tl:"頻道",e:"<strong>頻道6</strong>（156.300 MHz）用於<strong>船與船工作通訊</strong>及<strong>船與搜救飛機</strong>之間的通訊。"},
+{q:"頻道13（Channel 13）的主要用途是甚麼？",o:["遇險通訊","船橋對船橋的通訊（Bridge-to-Bridge），主要用於船舶避碰","DSC呼叫","氣象廣播"],a:1,tag:"ch",tl:"頻道",e:"<strong>頻道13</strong>（156.650 MHz）用於<strong>船橋對船橋</strong>通訊，特別是船舶<strong>避碰協調</strong>和航行安全。"},
+{q:"船與船之間的呼叫（Calling）可使用哪些頻道？",o:["只可用頻道16","頻道12、14、67、74","頻道6、8、69、72、73","頻道26、27"],a:1,tag:"ch",tl:"頻道",e:"船與船<strong>呼叫</strong>可用<strong>頻道12、14、67、74</strong>。呼叫成功後應立即轉移至工作頻道。"},
+{q:"船與船之間的工作通訊（Working）可使用哪些頻道？",o:["頻道12、14、16、67、74","頻道6、8、69、72、73","頻道26、27","頻道9、11"],a:1,tag:"ch",tl:"頻道",e:"船與船<strong>工作通訊</strong>可用<strong>頻道6、8、69、72、73</strong>。"},
+{q:"在香港，港口作業中船與海岸電台之間的工作通訊可使用哪些頻道？",o:["頻道6、8","頻道12、14","頻道26、27","頻道9、11"],a:2,tag:"ch",tl:"頻道",e:"港口作業中船與海岸電台工作通訊使用<strong>頻道26和27</strong>（雙頻頻道）。"},
+{q:"在香港，「海事」（海事處船隻航行監察中心）使用哪些VHF頻道？",o:["頻道16、70、06","頻道12、14、20、63、67、74等（視水域分段）","頻道9、11","頻道26、27"],a:1,tag:"ch",tl:"頻道",e:"海事處使用多個頻道：<strong>02</strong>（海港東）、<strong>12</strong>（東進口航道）、<strong>14</strong>（海港）、<strong>63</strong>（大嶼山南）、<strong>67</strong>（西進口航道）、<strong>74</strong>（葵涌）等，視水域分段而定。"},
+{q:"在香港，頻道14（Channel 14）的主要用途是甚麼？",o:["國際遇險呼叫","港口操作通訊","船與搜救飛機通訊","氣象廣播"],a:1,tag:"ch",tl:"頻道",e:"在香港，<strong>頻道14</strong>（156.700 MHz）主要用於<strong>港口操作通訊</strong>，例如貨櫃碼頭和船舶之間的協調。"},
+{q:"VHF頻道26（Channel 26）在香港的主要用途是甚麼？",o:["國際遇險呼叫","DSC數位選擇呼叫","船與海岸電台之間的公眾通訊","港口作業通訊"],a:2,tag:"ch",tl:"頻道",e:"在香港，<strong>頻道26</strong>（157.300 MHz）主要用於<strong>船與海岸電台之間的公眾通訊</strong>（雙頻頻道，發射和接收頻率不同）。"},
+
+/* 遇險 7 */
+{q:"如有船員墮海及遇溺（生命即時危險），應使用哪種呼叫？",o:["PAN-PAN","SÉCURITÉ","MAYDAY","URGENCY"],a:2,tag:"dis",tl:"遇險",e:"船員<strong>遇溺</strong>屬「嚴重及即時危險」，必須使用<strong>MAYDAY</strong>（最高優先級）。若墮海但穿救生衣且清醒可用PAN-PAN。"},
+{q:"所有遇險通訊應以甚麼信號開始？",o:["HELLO HELLO HELLO","MAYDAY MAYDAY MAYDAY","EMERGENCY EMERGENCY EMERGENCY","SOS SOS SOS"],a:1,tag:"dis",tl:"遇險",e:"所有遇險通訊以<strong>MAYDAY三次</strong>開始。三級優先：①MAYDAY（遇險）②PAN-PAN（緊急）③SÉCURITÉ（安全）。"},
+{q:"「MAYDAY RELAY」（遇險轉發）的作用是甚麼？",o:["原始遇險船隻自己發出的遇險呼叫","另一艘船或海岸電台代為轉發遇險訊息","測試通訊系統是否正常","宣布遇險結束"],a:1,tag:"dis",tl:"遇險",e:"<strong>MAYDAY RELAY</strong>是<strong>其他船隻或海岸電台</strong>代為轉發遇險訊息，當原始遇險船無法直接呼叫時使用。"},
+{q:"收到遇險呼叫後，如你不是最接近遇險船隻的電台，應如何處理？",o:["立即回應並前往救援","等待控制電台指示，不要搶佔頻道","直接轉發遇險電文","無需確認"],a:1,tag:"dis",tl:"遇險",e:"如<strong>不是最接近遇險船</strong>，應<strong>靜候控制電台指示</strong>，不要搶佔頻道，以免妨礙遇險通訊。"},
+{q:"遇險船隻恢復全面通訊能力後，應發出甚麼通告？",o:["MAYDAY RELAY 三次","PAN-PAN 三次","SÉCURITÉ 三次，宣布恢復全面通訊","CQ CQ CQ"],a:2,tag:"dis",tl:"遇險",e:"恢復通訊時發出<strong>SÉCURITÉ三次</strong>宣布已脫離遇險狀態。"},
+{q:"在遇險通訊中，誰擁有通訊的控制權？",o:["任何回應的船隻","距離最近的船隻","遇險船隻","海岸電台"],a:2,tag:"dis",tl:"遇險",e:"<strong>遇險船隻</strong>擁有遇險通訊的控制權，可決定何時開始和結束。其他電台須聽從其協調。"},
+{q:"SÉCURITÉ 信號的優先級為何？",o:["最高優先級","第二優先級","第三優先級（最低）","只在戰時使用"],a:2,tag:"dis",tl:"遇險",e:"優先級：①<strong>MAYDAY</strong>（遇險）②<strong>PAN-PAN</strong>（緊急）③<strong>SÉCURITÉ</strong>（安全通告）。"},
+
+/* 程序 8 */
+{q:"「OVER」的意思是甚麼？",o:["通話完畢，不再回應","我的話說完了，請你回應","請求重複","確認收到"],a:1,tag:"proc",tl:"程序",e:"<strong>OVER</strong>＝我說完了，<strong>請你回應</strong>（我仍在守聽）。<br>OUT＝通話完畢不再聽。簡記：OVER＝還在(Over to you)，OUT＝走了。"},
+{q:"「OUT」的意思是甚麼？",o:["通話完畢，不再回應","我的話說完了，請你回應","請說","結束整個通話"],a:0,tag:"proc",tl:"程序",e:"<strong>OUT</strong>＝<strong>通話完畢</strong>，我不再收聽這個頻道。本次通訊已完全結束。"},
+{q:"通訊電台進行識別時，應報讀甚麼資料？",o:["只需報讀船名","船名、船東名/船名、或船名/國際呼號","只需報讀國際呼號","只需報讀船舶註冊號碼"],a:1,tag:"proc",tl:"程序",e:"識別可用：①<strong>船名</strong>②<strong>船東名/船名</strong>③<strong>船名/國際呼號</strong>。三選一即可。"},
+{q:"下列哪一種電台識別是被禁止使用的？",o:["船舶的國際呼號","船名","漁船登記號碼或名人名字","船東名稱加船名"],a:2,tag:"proc",tl:"程序",e:"<strong>漁船登記號碼、名人名字</strong>或未經批准的識別均禁止使用，必須用正式註冊的船名或呼號。"},
+{q:"呼叫「海事」三次仍未有回應，應怎樣做？",o:["繼續不斷呼叫","改用頻道16發出遇險呼叫","等候適當時間後嘗試另一個海事頻道或用電話聯絡","立即關閉無線電"],a:2,tag:"proc",tl:"程序",e:"呼叫三次無回應，應<strong>等候適當時間</strong>後嘗試<strong>另一個海事頻道</strong>（如從14轉12），或用電話聯絡海事處。"},
+{q:"聽到其他電台好像在呼叫你的船名，應怎樣做？",o:["立即回應","不回應等對方再呼叫","確認呼叫確實是給你的（如對方報出呼號）才回應","切換到其他頻道"],a:2,tag:"proc",tl:"程序",e:"應先<strong>仔細聆聽確認</strong>呼叫確實是給你的（如對方報出你的呼號），確認後才回應，避免誤會。"},
+{q:"在VHF通訊中，呼叫前應先做甚麼？",o:["直接發射","監聽頻道是否空閒","調高音量","按下PTT不放"],a:1,tag:"proc",tl:"程序",e:"呼叫前應先<strong>監聽頻道是否空閒</strong>（約數秒），確認沒有其他通訊正在進行才可發射。"},
+{q:"如果你無意中接收到非准許的通訊內容，應如何處理？",o:["立即回應並告知對方頻道錯誤","抄錄內容並向海事處舉報","切勿抄錄、轉讓或作任何用途","繼續收聽以獲取更多資訊"],a:2,tag:"proc",tl:"程序",e:"無意接收非准許通訊，<strong>切勿抄錄、轉讓或作任何用途</strong>，立即離開該頻道。違反可構成刑事責任。"}
+];
+
+/* ===== 全局狀態 ===== */
+var ans={},chk={},subm=false,curTab="A",tLeft=5400,tmr=null,tExp=false;
+var TA=2,TB=Q.length,PB=66;
+var L=["A","B","C","D"];
+
+/* ===== 工具 ===== */
+function $(id){return document.getElementById(id)}
+function ev(id,evt,fn){var e=$(id);if(e)e.addEventListener(evt,fn,false)}
+function all(s,p){return (p||document).querySelectorAll(s)}
+
+/* ===== 初始化 ===== */
+function init(){
+  renderA();renderB();
+  startTmr();
+  updP();
+}
+document.addEventListener("DOMContentLoaded",init);
+
+/* ===== A部渲染 ===== */
+function renderA(){
+  var c=$("aContent");c.innerHTML="";
+  // A1
+  c.innerHTML+=`
+<div class="card">
+<div class="q-head"><span class="q-num">A部 第1題</span><span class="tag tag-wr">撰寫題 · MAYDAY</span><span class="q-stat" id="as0">尚未作答</span></div>
+<div class="q-txt"><strong>場景：</strong>你是一艘名為「<strong>海燕</strong>」（HAI YIN）的遊樂船船長，國際呼號為 <strong>VRHK</strong>。你的船隻在香港維港東部水域（座標：北緯22°17.5'、東經114°13.2'）因碰撞導致船身入水，船上有4名人員，需要緊急救援。請撰寫完整的<strong>遇險呼叫（MAYDAY CALL）</strong>。</div>
+<div class="write"><label>📝 你的遇險呼叫內容：</label><textarea id="w1" placeholder="在此輸入你的遇險呼叫內容..."></textarea></div>
+<div class="btn-row">
+<button class="btn btn-w" onclick="showR(1)">🔍 顯示參考答案</button>
+<button class="btn btn-p" onclick="goA(1)">下一題 →</button>
+</div>
+<div class="ref" id="r1"></div>
+</div>`;
+  // A2
+  c.innerHTML+=`
+<div class="card">
+<div class="q-head"><span class="q-num">A部 第2題</span><span class="tag tag-wr">撰寫題 · PAN-PAN</span><span class="q-stat" id="as1">尚未作答</span></div>
+<div class="q-txt"><strong>場景：</strong>你船「<strong>東方之珠</strong>」（EASTERN PEARL）在香港南丫島以西水域航行時，有一名船員不慎<strong>墮海</strong>，該名船員穿著救生衣但仍在水面掙扎。當時能見度良好，風力約4級。請撰寫發給所有電台的<strong>緊急通告（PAN-PAN）</strong>。</div>
+<div class="write"><label>📝 你的緊急通告內容：</label><textarea id="w2" placeholder="在此輸入你的PAN-PAN緊急通告..."></textarea></div>
+<div class="btn-row">
+<button class="btn btn-o" onclick="goA(0)">← 上一題</button>
+<button class="btn btn-w" onclick="showR(2)">🔍 顯示參考答案</button>
+<button class="btn btn-s" onclick="finA()">✅ 完成A部，前往B部</button>
+</div>
+<div class="ref" id="r2"></div>
+</div>`;
+  ev("w1","input",updP);ev("w2","input",updP);
+  // 觸控
+  ev("w1","touchstart",function(){},true);
+}
+
+function goA(i){
+  var cards=all("#aContent .card");
+  for(var n=0;n<cards.length;n++)cards[n].style.display="none";
+  if(cards[i])cards[i].style.display="block";
+  scrollTop();
+}
+
+function finA(){swTab("B")}
+
+/* A部參考答案 */
+function showR(n){
+  var r=$("r"+n),d=wA[n];
+  if(!d)return;
+  var tips=d.p.map(function(x){return"<li>"+x+"</li>"}).join("");
+  r.innerHTML='<div class="ref-t">📌 '+d.t+'</div><div class="ref-b">'+d.b+'</div><div class="ref-tips"><strong>評分要點：</strong><ul>'+tips+'</ul></div>';
+  r.classList.add("on");
+}
+
+/* ===== B部渲染 ===== */
+function renderB(){
+  var c=$("bContent");c.innerHTML="";
+  Q.forEach(function(q,i){
+    var tagC="tag-"+q.tag;
+    var opts=q.o.map(function(o,oi){
+      return'<label class="opt" id="l-'+i+'_'+oi+'"><input type="radio" name="bq'+i+'" value="'+oi+'" onchange="onChg('+i+')"><span>'+L[oi]+'. '+o+'</span></label>';
+    }).join("");
+    var nav='';
+    if(i>0)nav+='<button class="btn btn-o" onclick="goB('+(i-1)+')">← 上一題</button>';
+    else nav+='<button class="btn btn-o" onclick="swTab(\'A\')">← 返回A部</button>';
+    nav+='<button class="btn btn-w" onclick="chkA('+i+')">✔ 核對答案</button>';
+    if(i<TB-1)nav+='<button class="btn btn-p" onclick="goB('+(i+1)+')">下一題 →</button>';
+    else nav+='<button class="btn btn-s" onclick="doSubmit()">🏁 提交考試</button>';
+    c.innerHTML+='<div class="card" id="bc'+i+'"><div class="q-head"><span class="q-num">B部 第'+(i+1)+'題</span><span class="tag '+tagC+'">'+q.tl+'</span><span class="q-stat" id="bs'+i+'">未選擇</span></div><div class="q-txt">'+q.q+'</div><div class="opts">'+opts+'</div><div class="btn-row">'+nav+'</div><div class="exp" id="e'+i+'"></div></div>';
+  });
+  showB(0);
+}
+
+function showB(i){
+  var cards=all("#bContent .card");
+  for(var n=0;n<cards.length;n++)cards[n].style.display="none";
+  if(cards[i])cards[i].style.display="block";
+  scrollTop();
+}
+function goB(i){showB(i);updP()}
+
+function onChg(i){
+  if(chk[i])return;
+  var labels=all("#bc"+i+" .opt");
+  for(var n=0;n<labels.length;n++)labels[n].classList.remove("sel");
+  var rads=document.getElementsByName("bq"+i);
+  for(var r=0;r<rads.length;r++){
+    if(rads[r].checked){var lb=$("l-"+i+"_"+r.value);if(lb)lb.classList.add("sel");break}
+  }
+  var ex=$("e"+i);ex.classList.remove("on");ex.innerHTML="";
+  updP();
+}
+
+function chkA(i){
+  if(chk[i]||subm)return;
+  var rads=document.getElementsByName("bq"+i),sel=null;
+  for(var r=0;r<rads.length;r++){if(rads[r].checked){sel=+rads[r].value;break}}
+  var ex=$("e"+i);
+  if(sel===null){ex.innerHTML='<span style="color:#e74c3c;font-weight:600;">⚠️ 請先選擇一個答案！</span>';ex.classList.add("on");return}
+  chk[i]=true;
+  var labels=all("#bc"+i+" .opt");
+  for(var l=0;l<labels.length;l++){
+    labels[l].classList.add("dis");
+    var inp=labels[l].querySelector("input");if(inp)inp.disabled=true;
+    if(l===Q[i].a)labels[l].classList.add("correct");
+    else if(l===sel&&l!==Q[i].a)labels[l].classList.add("wrong");
+  }
+  if(sel===Q[i].a)ex.innerHTML='<span class="badge">✓ 正確</span><br>正確答案是 <strong>'+L[Q[i].a]+'</strong>。<div style="margin-top:3px">'+Q[i].e+'</div>';
+  else ex.innerHTML='<span style="color:#e74c3c;font-weight:700;">✗ 錯誤</span><br>你的答案：'+L[sel]+'，正確答案是 <strong>'+L[Q[i].a]+'</strong>。<div style="margin-top:3px">'+Q[i].e+'</div>';
+  ex.classList.add("on");
+  $("bs"+i).textContent="已核對";$("bs"+i).classList.add("ok");
+  updP();
+}
+
+/* ===== Tab ===== */
+function swTab(t){
+  curTab=t;$("tabA").classList.toggle("on",t==="A");$("tabB").classList.toggle("on",t==="B");
+  $("pA").classList.toggle("on",t==="A");$("pB").classList.toggle("on",t==="B");
+  $("pLbl").textContent=t==="A"?"A部進度":"B部進度";
+  $("rPanel").classList.remove("on");
+  scrollTop();updP();
+}
+
+/* ===== 進度 ===== */
+function updP(){
+  var w1=$("w1"),w2=$("w2");
+  var a1=(w1&&w1.value.trim().length>10),a2=(w2&&w2.value.trim().length>10);
+  var aD=(a1?1:0)+(a2?1:0);
+  if($("as0")){$("as0").textContent=a1?"✅ 已作答":"尚未作答";$("as0").className="q-stat"+(a1?" ok":"")}
+  if($("as1")){$("as1").textContent=a2?"✅ 已作答":"尚未作答";$("as1").className="q-stat"+(a2?" ok":"")}
+  var bN=0;for(var i=0;i<TB;i++){var rads=document.getElementsByName("bq"+i);for(var r=0;r<rads.length;r++){if(rads[r].checked){bN++;break}}}
+  $("bcA").textContent=aD+"/"+TA;$("bcB").textContent=bN+"/"+TB;
+  var pct;if(curTab==="A")pct=Math.round((aD/TA)*100);else pct=Math.round((bN/TB)*100);
+  $("pFill").style.width=pct+"%";$("pPct").textContent=pct+"%";
+}
+
+/* ===== 計時器 ===== */
+function startTmr(){
+  updT();tmr=setInterval(function(){
+    if(subm){clearInterval(tmr);return}
+    tLeft--;
+    if(tLeft<=0){tLeft=0;clearInterval(tmr);tExp=true;
+      $("tDisp").textContent="⏱ 00:00";$("tDisp").classList.add("warn");$("tStat").textContent="時間到！";
+      alert("⏰ 考試時間已到！系統將自動提交。");doSubmit();return;
+    }
+    updT();
+  },1000);
+}
+function updT(){
+  var m=Math.floor(tLeft/60),s=tLeft%60;
+  $("tDisp").textContent="⏱ "+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  if(tLeft<=300&&tLeft>0){$("tDisp").classList.add("warn");$("tStat").textContent="剩餘5分鐘！"}
+  else if(tLeft>300)$("tStat").textContent="進行中";
+}
+
+/* ===== 提交 ===== */
+function doSubmit(){
+  if(subm)return;subm=true;clearInterval(tmr);
+  // 自動核對所有
+  for(var i=0;i<TB;i++){
+    if(!chk[i]){
+      chk[i]=true;
+      var rads=document.getElementsByName("bq"+i),sel=null;
+      for(var r=0;r<rads.length;r++){if(rads[r].checked){sel=+rads[r].value;break}}
+      var lbs=all("#bc"+i+" .opt");
+      for(var l=0;l<lbs.length;l++){
+        lbs[l].classList.add("dis");
+        var inp=lbs[l].querySelector("input");if(inp)inp.disabled=true;
+        if(l===Q[i].a)lbs[l].classList.add("correct");
+        else if(l===sel&&l!==Q[i].a)lbs[l].classList.add("wrong");
+      }
+      var ex=$("e"+i);
+      var sl=sel!==null?L[sel]:"未答";
+      ex.innerHTML='<span class="badge">正確答案：'+L[Q[i].a]+'</span><div style="margin-top:3px">你的答案：'+sl+'<br>'+Q[i].e+'</div>';
+      ex.classList.add("on");
+    }
+  }
+  // 計分
+  var cor=0;
+  for(var c=0;c<TB;c++){var rs=document.getElementsByName("bq"+c);for(var rr=0;rr<rs.length;rr++){if(rs[rr].checked&&+rs[rr].value===Q[c].a){cor++;break}}}
+  var sc=Math.round((cor/TB)*1100)/10,pass=sc>=PB;
+  // 結果
+  $("rPanel").classList.add("on");
+  var sEl=$("rScore");sEl.textContent=sc+" 分";sEl.className="score "+(pass?"pass":"fail");
+  $("rIco").textContent=pass?"🎉":"😢";
+  $("rMsg").textContent=pass?"恭喜！你已達到B部及格分數（"+PB+"分）":"未達及格分數（"+PB+"分），請繼續努力！";
+  $("rMsg").style.color=pass?"#27ae60":"#e74c3c";
+  $("rDet").textContent="B部答對 "+cor+" / "+TB+" 題（每題2.5分）| A部撰寫題請自行對照參考答案";
+  // 總表
+  var h="";
+  for(var k=0;k<TB;k++){
+    var ra=document.getElementsByName("bq"+k),sl=null;
+    for(var x=0;x<ra.length;x++){if(ra[x].checked){sl=+ra[x].value;break}}
+    var ic=sl===Q[k].a;
+    h+='<tr class="'+(ic?"ok":"no")+'"><td class="ci">'+(ic?'<span class="iok">✓</span>':'<span class="ino">✗</span>')+'</td><td class="cq">'+(k+1)+'. '+(Q[k].q.length>35?Q[k].q.substring(0,35)+"...":Q[k].q)+'</td><td>'+(sl!==null?L[sl]:"—")+'</td><td><strong>'+L[Q[k].a]+'</strong></td></tr>';
+  }
+  $("sBody").innerHTML=h;
+  $("sBar").style.display="none";
+  scrollToEl($("rPanel"));
+}
+
+/* ===== 重置 ===== */
+function doReset(){
+  if(!confirm("確定要重新開始考試嗎？所有作答將被清除。"))return;
+  ans={};chk={};subm=false;tExp=false;tLeft=5400;
+  // A部
+  if($("w1"))$("w1").value="";if($("w2"))$("w2").value="";
+  for(var n=1;n<=2;n++){var r=$("r"+n);if(r){r.classList.remove("on");r.innerHTML=""}}
+  // B部
+  for(var i=0;i<TB;i++){
+    var rads=document.getElementsByName("bq"+i);
+    for(var r=0;r<rads.length;r++){rads[r].checked=false;rads[r].disabled=false}
+    var lbs=all("#bc"+i+" .opt");
+    for(var l=0;l<lbs.length;l++)lbs[l].classList.remove("sel","correct","wrong","dis");
+    var ex=$("e"+i);if(ex){ex.classList.remove("on");ex.innerHTML=""}
+    var st=$("bs"+i);if(st){st.textContent="未選擇";st.classList.remove("ok")}
+  }
+  $("rPanel").classList.remove("on");
+  $("sBar").style.display="flex";
+  var aCards=all("#aContent .card");
+  for(var a=0;a<aCards.length;a++)aCards[a].style.display="none";
+  if(aCards[0])aCards[0].style.display="block";
+  clearInterval(tmr);startTmr();
+  swTab("A");
+}
+
+/* ===== 工具 ===== */
+function scrollTop(){window.scrollTo({top:0,behavior:"smooth"})}
+function scrollToEl(el){window.scrollTo({top:el.offsetTop-20,behavior:"smooth"})}
+</script>
+</body>
+</html>
